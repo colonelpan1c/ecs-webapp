@@ -1,0 +1,98 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>API Caller</title>
+  <style>
+    body {
+      font-family: sans-serif;
+      padding: 20px;
+    }
+
+    #result {
+      margin-top: 20px;
+      white-space: pre-wrap; /* Preserve line breaks */
+    }
+  </style>
+</head>
+<body>
+  <div>
+    <label><input type="radio" name="blockParam" value="latest" checked> latest</label>
+    <label><input type="radio" name="blockParam" value="earliest"> earliest</label>
+    <label><input type="radio" name="blockParam" value="safe"> safe</label>
+    <label><input type="radio" name="blockParam" value="finalized"> finalized</label>
+    <label><input type="radio" name="blockParam" value="pending"> pending</label>
+  </div>
+  <input type="text" id="ethAddress" placeholder="Enter Ethereum Address">
+  <button id="callApiButton">Get Balance</button>
+  <div id="result"></div>
+  <div id="debug"></div>
+
+  <script>
+    const extractEthAddress = (url) => url.substring(url.lastIndexOf('/') + 1);
+    document.getElementById('callApiButton').addEventListener('click', async () => {
+      let ethAddress = document.getElementById('ethAddress').value;
+      ethAddress = extractEthAddress(ethAddress); //extract the eth address from the url.
+      //const ethAddress = document.getElementById('ethAddress').value; 
+      const selectedValue = document.querySelector('input[name="blockParam"]:checked').value; // Get selected radio button value
+      
+      const resultDiv = document.getElementById('result');
+      const debugDiv = document.getElementById('debug');
+
+      try {
+         //const response = await fetch('/api/callRemoteAPI', {
+         //const response = await fetch('http://10.1.9.115:5000/api/callRemoteAPI', {
+         //const backendURL = process.env.BACKEND_URL || 'http://localhost:5000/api/callRemoteAPI'  // this is nodejs specific and inaccesible in the browser context
+         //const backendURL = window.BACKEND_URL || 'http://localhost:5000/api/callRemoteAPI'
+         //const backendURL = 'http://backend:5000/api/callRemoteAPI';
+         
+         //const backendURL = 'http://10.1.9.115:5000/api/callRemoteAPI';
+         //const backendURL = 'http://localhost:5000/api/callRemoteAPI';
+         const backendURL = '/api/callRemoteAPI';
+         const response = await fetch(backendURL, {
+           method: 'POST',
+           headers: {
+           'Content-Type': 'application/json',
+          },
+          // DEBUG uncomment below for one var mode
+          // body: JSON.stringify({ eth_address: ethAddress }),
+          body: JSON.stringify({ eth_address: ethAddress, block_param: selectedValue }), // Send both values to backend
+       
+        });
+
+        if (!response.ok) {
+          throw new Error(`HTTP error! status: ${response.status}`);
+        }
+
+        const data = await response.json();
+        //DEBUG: provide raw response
+        //resultDiv.textContent = JSON.stringify(data, null, 2);
+        //debugDiv.textContent = JSON.stringify(data, null, 2);
+        
+        // We can get fancier
+        // Wei value returned in data.result 
+        const weiHex = data.result; 
+
+        if (weiHex === undefined){
+          resultDiv.textContent = "Error: the API did not return a result value";
+          return;
+        }
+
+        // Convert hexadecimal Wei to decimal Wei
+        const weiDecimal = BigInt(weiHex);
+
+        // Convert Wei to ETH
+        const ethDecimal = Number(weiDecimal) / Math.pow(10, 18);
+
+        // Display all values
+        resultDiv.textContent = `Wei (Hex): ${weiHex}\nWei (Decimal): ${weiDecimal}\nETH: ${ethDecimal}`;
+        
+      } catch (error) {
+        resultDiv.textContent = `Error: ${error.message}`;
+        console.error('API Error:', error);
+      }
+    });
+  </script>
+</body>
+</html>

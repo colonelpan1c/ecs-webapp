@@ -1,0 +1,31 @@
+#version: "3.8"
+services:
+  backend:
+    build: ./backend
+    image: ${DOCKER_REGISTRY}/backend:latest
+    pull_policy: build
+    ports:
+      - "5000:5000"
+#    networks:
+#      - app-network
+    environment:
+      API_KEY: "SUBSTITUTEME"
+  frontend:
+    build: ./frontend
+    image: ${DOCKER_REGISTRY}/frontend:latest
+    depends_on:
+      - backend
+    pull_policy: build
+#      args:
+#        BACKEND_URL_FROM_BUILD: http://backend:5000/api/callRemoteAPI 
+    ports:
+      - "8080:80"
+#    networks:
+#      - app-network
+    environment:
+      BACKEND_URL: http://backend:5000/api/callRemoteAPI 
+
+#
+#networks:
+#  app-network:
+#    driver: bridge
